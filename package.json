@@ -17,11 +17,13 @@
   },
   "homepage": "https://github.com/hrr20-nebula/trail-angel#readme",
   "dependencies": {
+    "bluebird": "^3.4.7",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
     "mysql": "^2.12.0",
     "redis": "^2.6.3",
+    "request": "^2.79.0",
     "sequelize": "^3.28.0"
   },
   "devDependencies": {
