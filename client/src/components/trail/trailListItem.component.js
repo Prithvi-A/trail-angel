@@ -7,6 +7,7 @@ import {  View,
           ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import WeatherIcon from '../weather/weather-icon.component';
+import WeatherForecast from '../weather/weather-forecast.component';
 import Details from './trailDetail.component';
 import dataApi from '../../api';
 import temperature from '../../utils/temperature';
@@ -75,12 +76,11 @@ export default class TraillistItem extends React.Component {
       distance: null,
       weather: null,
       weatherTimeout: false,       // helps determine when to give up on weather data,
-      image: null                            // stop displaying the spinner and show a default icon
+      image: null                  // stop displaying the spinner and show a default icon
     };
   }
 
   componentDidMount() {
-
     this._isMounted = true;
 
     const isFavorite = this.props.collections !== undefined && this.props.collections.indexOf('favorites') !== -1;
@@ -148,7 +148,33 @@ export default class TraillistItem extends React.Component {
     }
   }
 
-  _selectTrail(e) {
+  _handlePressDailyForecast() {
+    debugger
+    this.props.navigator.push({
+      title: 'HourlyForecast',
+      component: WeatherForecast,
+      passProps: {
+        forecast: this.props.weather.hourly.data,
+        type: 'hourly'
+      }
+    })
+  }
+
+  _handlePressWeather() {
+    this.props.navigator.push({
+      title: 'Daily Forecast',
+      component: WeatherForecast,
+      passProps: {
+        ...this.state.weather,
+        forecast: this.state.weather.daily.data,
+        type: 'daily',
+        navigator: this.props.navigator,
+        handlePress: this._handlePressDailyForecast
+      }
+    })
+  }
+
+  _selectTrail() {
     this.props.navigator.push({
       title: 'Trail Detail',
       component: Details,
@@ -171,7 +197,7 @@ export default class TraillistItem extends React.Component {
             <View style={styles.rowContainer}>
               <View style={styles.leftColumn}>
 
-                <Image source={{uri: this.props.icon}} style={styles.photo} />
+                <Image source={{uri: this.props.photoUrl}} style={styles.photo} />
                 <TouchableHighlight onPress={this._toggleFavorite.bind(this)}
                                     style={styles.favorite}
                                     underlayColor='#ffffff'>
@@ -180,8 +206,10 @@ export default class TraillistItem extends React.Component {
               </View>
               <View style={styles.textContainer}>
                 <Text style={styles.title}>{this.props.name}</Text>
-                <Text style={styles.location}> {this.props.formatted_address} </Text>
-                <Text style={styles.rating}> Rating: {this.props.rating} </Text>
+                <Text style={styles.location}> {this.props.vicinity} </Text>
+                {this.props.rating === undefined ? <View /> :
+                  <Text style={styles.rating}> Rating: {this.props.rating} </Text>
+                }
                 <Text style={styles.description}
                       numberOfLines={0}>{this.props.snippet_text}</Text>
               </View>
@@ -198,20 +226,26 @@ export default class TraillistItem extends React.Component {
                   {/* Display activity monitor until icon is loaded from api.  If no icon is ever received */}
                   {/* after a timeout, display nothing */}
                   {this.state.weather ? <View>
-                                          <WeatherIcon icon={this.state.weather.currently.icon}
-                                                       color='darkgreen'
-                                                       size={40}
-                                                       style={{
-                                                         opacity: 0.8
-                                                     }}
-                                          />
-                                          <Text style={{
-                                            textAlign: 'center',
-                                            padding: 5,
-                                            color: 'darkgreen'
-                                          }}>
-                                            {`${Math.round(Number(this.state.weather.currently.temperature))}°F`}
-                                          </Text>
+                                          <TouchableHighlight onPress={this._handlePressWeather.bind(this)}
+                                                              underlayColor='#ffffff'
+                                          >
+                                            <View>
+                                              <WeatherIcon icon={this.state.weather.currently.icon}
+                                                           color='darkgreen'
+                                                           size={40}
+                                                           style={{
+                                                             opacity: 0.8
+                                                         }}
+                                              />
+                                              <Text style={{
+                                                textAlign: 'center',
+                                                padding: 5,
+                                                color: 'darkgreen'
+                                              }}>
+                                                {`${Math.round(Number(this.state.weather.currently.temperature))}°F`}
+                                              </Text>
+                                            </View>
+                                          </TouchableHighlight>
                                         </View>
                                       :
                                         this.state.weatherTimeout ?

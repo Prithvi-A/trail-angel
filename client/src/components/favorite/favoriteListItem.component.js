@@ -7,6 +7,7 @@ import {  View,
           ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import WeatherIcon from '../weather/weather-icon.component';
+import WeatherForecast from '../weather/weather-forecast.component';
 import Details from '../trail/trailDetail.component';
 import Dashboard from './favoriteMapDashboard.component';
 
@@ -93,8 +94,8 @@ export default class FavoriteListItem extends React.Component {
 
     dataApi.google.getDistance2Points(this.props.userLocation.coords,
                                       {
-                                        latitude: this.props.geometry.lat,
-                                        longitude: this.props.geometry.lng
+                                        latitude: this.props.geometry.location.lat,
+                                        longitude: this.props.geometry.location.lng
                                       })
       .then((distance) => {
         if (this._isMounted && distance) {
@@ -107,7 +108,7 @@ export default class FavoriteListItem extends React.Component {
         console.error('Error getting distance for component: ', err);
       });
 
-    dataApi.weather(this.props.geometry.lat, this.props.geometry.lng)
+    dataApi.weather(this.props.geometry.location.lat, this.props.geometry.location.lng)
       .then((weather) => {
         if (this._isMounted && weather) {
           this.setState({
@@ -138,6 +139,20 @@ export default class FavoriteListItem extends React.Component {
     });
   }
 
+  _handlePressWeather() {
+    this.props.navigator.push({
+      title: 'Daily Forecast',
+      component: WeatherForecast,
+      passProps: {
+        ...this.state.weather,
+        forecast: this.state.weather.daily.data,
+        type: 'daily',
+        navigator: this.props.navigator,
+        handlePress: this._handlePressDailyForecast
+      }
+    })
+  }
+
   _handleGoToMapDashboard() {
     this.props.navigator.push({
       title: 'Dashboard',
@@ -160,7 +175,7 @@ export default class FavoriteListItem extends React.Component {
           <View>
             <View style={styles.rowContainer}>
               <View>
-                <Image source={{uri: this.props.image_url}} style={styles.photo} />
+                <Image source={{uri: this.props.photoUrl}} style={styles.photo} />
                 <TouchableHighlight onPress={this._handleRemoveFavorite.bind(this)}
                                     style={styles.removeButton}
                                     underlayColor='#ffffff'>
@@ -174,8 +189,10 @@ export default class FavoriteListItem extends React.Component {
               </View>
               <View style={styles.textContainer}>
                 <Text style={styles.title}>{this.props.name}</Text>
-                <Text style={styles.location}> {this.props.formatted_address} </Text>
-                <Text style={styles.rating}> Rating: {this.props.rating} </Text>
+                <Text style={styles.location}> {this.props.vicinity} </Text>
+                {this.props.rating === undefined? <View /> :
+                  <Text style={styles.rating}> Rating: {this.props.rating} </Text>
+                }
                 <Text style={styles.description} numberOfLines={0}>{this.props.snippet_text}</Text>
               </View>
               <View>
@@ -187,13 +204,32 @@ export default class FavoriteListItem extends React.Component {
                   marginBottom: 20,
                   marginLeft: 5
                 }}>
-                  {this.state.weather ? <WeatherIcon icon={this.state.weather.currently.icon}
-                                                     color='darkgreen'
-                                                     size={40}
-                                                     style={{
-                                                       opacity: 0.8
-                                                     }}
-                  /> :
+                  {this.state.weather ? <View>
+                                          <TouchableHighlight onPress={this._handlePressWeather.bind(this)}
+                                                              underlayColor='white'
+                                          >
+                                            <View>
+                                              <WeatherIcon icon={this.state.weather.currently.icon}
+                                                           color='darkgreen'
+                                                           size={40}
+                                                           style={{
+                                                             opacity: 0.8
+                                                           }}
+                                              />
+                                              <Text style={{
+                                                textAlign: 'center',
+                                                padding: 5,
+                                                color: 'darkgreen'
+                                              }}>
+                                              {this.state.weather ?
+                                                `${Math.round(Number(this.state.weather.currently.temperature))}°F` :
+                                                ''
+                                              }
+                                              </Text>
+                                            </View>
+                                          </TouchableHighlight>
+                                        </View>
+                    :
                     <ActivityIndicator  size='small'
                                         color='darkgreen'
                                         style={{
@@ -201,16 +237,6 @@ export default class FavoriteListItem extends React.Component {
                                         }}
                     />
                   }
-                  <Text style={{
-                    textAlign: 'center',
-                    padding: 5,
-                    color: 'darkgreen'
-                  }}>
-                    {this.state.weather ?
-                      `${Math.round(Number(this.state.weather.currently.temperature))}°F` :
-                      ''
-                    }
-                  </Text>
                 </View>
               </View>
             </View>
